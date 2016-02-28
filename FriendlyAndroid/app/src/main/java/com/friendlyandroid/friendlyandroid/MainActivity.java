@@ -14,15 +14,19 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
@@ -30,6 +34,7 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -49,9 +54,9 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
-        Intent myIntent = getIntent(); // gets the previously created intent
-        this.username = myIntent.getStringExtra("username");
-        this.password = myIntent.getStringExtra("password");
+        Intent loginIntent = getIntent(); // gets the previously created intent
+        this.username = loginIntent.getExtras().get("username").toString();
+        this.password = loginIntent.getExtras().get("password").toString();
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -67,6 +72,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
                     .addApi(LocationServices.API)
                     .build();
         }
+        findFriends();
     }
 
     @Override
@@ -96,8 +102,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
         switch(v.getId()) {
             case R.id.bLogout:
                 sendLogout();
-                Intent loginIntent = new Intent(this, Login.class);
-                startActivity(loginIntent);
+                finish();
                 break;
         }
     }
@@ -127,33 +132,66 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     }
 
     public void findFriends() {
-        final TextView mTextView = (TextView) findViewById(R.id.text);
-
         // Instantiate the RequestQueue.
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "heroku-app.com/user/getUsers";
+//        String url = "api.androidhive.info/contacts/";
+        String url = "https://murmuring-brushlands-62477.herokuapp.com/user/index/" + this.username + "/" +
+                this.password;
         System.out.println(url);
 
         // Request a string response from the provided URL.
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-                new Response.Listener<String>() {
+        JsonArrayRequest JSARequest = new JsonArrayRequest(Request.Method.GET, url, null,
+                new Response.Listener<JSONArray>() {
                     @Override
-                    public void onResponse(String response) {
-                        // Display the first 500 characters of the response string.
-                        mTextView.setText("Response is: "+ response.substring(0,500));
+                    public void onResponse(JSONArray response) {
+                        String hello;
+//                        renderListView(response);
                     }
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                mTextView.setText("That didn't work!");
+                System.out.println("THAT DIDN'T WORK");
             }
         });
         // Add the request to the RequestQueue.
-        queue.add(stringRequest);
+        queue.add(JSARequest);
     }
 
-    public void getCurrentLocation() {
+    private void renderListView(JSONArray array) {
+        try {
+            for (int i = 0; i < array.length(); i++) {
+                JSONObject object = array.getJSONObject(i);
 
+                LinearLayout LL = new LinearLayout(this);
+                LL.setOrientation(LinearLayout.VERTICAL);
+                LinearLayout.LayoutParams LLparam = new LinearLayout.LayoutParams(
+                        0,
+                        ViewGroup.LayoutParams.MATCH_PARENT, 1.0f);
+                LL.setLayoutParams(LLparam);
+
+                TextView tvName = new TextView(this);
+                LinearLayout.LayoutParams tvNameParam = new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        0, 1.0f);
+                tvName.setLayoutParams(tvNameParam);
+                tvName.setText(object.getString("firstname") + " " + object.getString("lastname"));
+
+                TextView tvDistance = new TextView(this);
+                LinearLayout.LayoutParams tvDistanceParam = new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        0, 1.0f);
+                tvName.setLayoutParams(tvDistanceParam);
+                tvName.setText("5km");
+
+                LL.addView(tvName);
+                LL.addView(tvDistance);
+
+                LinearLayout mainListViewLayout = (LinearLayout) findViewById(R.id.mainListView);
+                mainListViewLayout.addView(LL);
+            }
+        } catch (JSONException e) {
+
+        }
     }
 
     @Override
