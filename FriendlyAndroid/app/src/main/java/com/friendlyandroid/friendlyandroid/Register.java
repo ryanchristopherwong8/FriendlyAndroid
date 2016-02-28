@@ -45,6 +45,7 @@ public class Register extends AppCompatActivity implements View.OnClickListener 
     public void onClick(View v) {
         switch(v.getId()) {
             case R.id.bRegister:
+                sendRegister();
                 break;
             case R.id.tvLoginLink:
                 Intent registerIntent = new Intent(Register.this, Login.class);
@@ -56,11 +57,15 @@ public class Register extends AppCompatActivity implements View.OnClickListener 
     public void sendRegister() {
         final TextView mTextView = (TextView) findViewById(R.id.text);
 
-// Instantiate the RequestQueue.
+        // Instantiate the RequestQueue.
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url ="http://www.google.com";
+        String url = "heroku-app.com/user/create/" + etUsername.getText() + "/" +
+                etPassword.getText() + "/" +
+                etFirstName.getText() + "/" +
+                etLastName.getText();
+        System.out.println(url);
 
-// Request a string response from the provided URL.
+        // Request a string response from the provided URL.
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
                 new Response.Listener<String>() {
                     @Override
@@ -74,7 +79,7 @@ public class Register extends AppCompatActivity implements View.OnClickListener 
                 mTextView.setText("That didn't work!");
             }
         });
-// Add the request to the RequestQueue.
+        // Add the request to the RequestQueue.
         queue.add(stringRequest);
     }
 }
