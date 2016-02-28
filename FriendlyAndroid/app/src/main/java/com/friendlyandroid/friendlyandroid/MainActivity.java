@@ -20,6 +20,7 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import com.android.volley.Request;
@@ -144,8 +145,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
                 new Response.Listener<JSONArray>() {
                     @Override
                     public void onResponse(JSONArray response) {
-                        String hello;
-//                        renderListView(response);
+                        renderListView(response);
                     }
                 }, new Response.ErrorListener() {
             @Override
@@ -158,40 +158,19 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     }
 
     private void renderListView(JSONArray array) {
+        ListView mainListViewLayout = (ListView) findViewById(R.id.mainListView);
+        ArrayAdapter<String> listAdapter = new ArrayAdapter<String>(this, R.layout.simplerow);
+
         try {
             for (int i = 0; i < array.length(); i++) {
                 JSONObject object = array.getJSONObject(i);
 
-                LinearLayout LL = new LinearLayout(this);
-                LL.setOrientation(LinearLayout.VERTICAL);
-                LinearLayout.LayoutParams LLparam = new LinearLayout.LayoutParams(
-                        0,
-                        ViewGroup.LayoutParams.MATCH_PARENT, 1.0f);
-                LL.setLayoutParams(LLparam);
-
-                TextView tvName = new TextView(this);
-                LinearLayout.LayoutParams tvNameParam = new LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        0, 1.0f);
-                tvName.setLayoutParams(tvNameParam);
-                tvName.setText(object.getString("firstname") + " " + object.getString("lastname"));
-
-                TextView tvDistance = new TextView(this);
-                LinearLayout.LayoutParams tvDistanceParam = new LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        0, 1.0f);
-                tvName.setLayoutParams(tvDistanceParam);
-                tvName.setText("5km");
-
-                LL.addView(tvName);
-                LL.addView(tvDistance);
-
-                LinearLayout mainListViewLayout = (LinearLayout) findViewById(R.id.mainListView);
-                mainListViewLayout.addView(LL);
+                listAdapter.add(object.getString("firstname") + " " + object.getString("lastname"));
             }
         } catch (JSONException e) {
 
         }
+        mainListViewLayout.setAdapter(listAdapter);
     }
 
     @Override

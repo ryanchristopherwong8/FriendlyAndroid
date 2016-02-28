@@ -8,10 +8,15 @@
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:orientation="vertical"
         android:layout_width="fill_parent"
-        android:layout_height="?android:attr/listPreferredItemHeight"
+        android:layout_height="fill_parent">
 
-        android:padding="6dip"
-        android:id="@+id/mainListView" />
+        <ListView android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:id="@+id/mainListView">
+        </ListView>
+
+    </LinearLayout>
+
 
     <Button
         android:id="@+id/bLogout"
