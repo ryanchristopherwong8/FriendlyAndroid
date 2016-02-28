@@ -1,5 +1,7 @@
 package com.friendlyandroid.friendlyandroid;
 
+import android.Manifest;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -7,6 +9,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -41,6 +44,8 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Timer;
+import java.util.TimerTask;
 
 
 public class MainActivity extends FragmentActivity implements View.OnClickListener, GoogleApiClient.ConnectionCallbacks,
@@ -49,8 +54,11 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     private String username;
     private String password;
     Button bLogout;
+    Button bRefresh;
 
     GoogleApiClient mGoogleApiClient;
+
+    private static final int REQUEST_LOCATION = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,7 +70,9 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        bRefresh = (Button) findViewById(R.id.bRefresh);
         bLogout = (Button) findViewById(R.id.bLogout);
+        bRefresh.setOnClickListener(this);
         bLogout.setOnClickListener(this);
 
         if (mGoogleApiClient == null) {
@@ -74,6 +84,43 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
                     .build();
         }
         findFriends();
+    }
+
+    private void updateCurrentLocation() {
+        try {
+            Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
+                    mGoogleApiClient);
+            if (mLastLocation != null) {
+                sendCurrentLocation(String.valueOf(mLastLocation.getLongitude()), String.valueOf(mLastLocation.getLatitude()));
+            }
+        } catch (SecurityException e) {
+            System.out.println("SECURITY EXCEPTION");
+        }
+    }
+
+    public void sendCurrentLocation(String lon, String lat) {
+        // Instantiate the RequestQueue.
+        RequestQueue queue = Volley.newRequestQueue(this);
+        String url = "https://murmuring-brushlands-62477.herokuapp.com/user/edit/" + this.username + "/" +
+                this.password + "/" +
+                lon + "/" +
+                lat;
+        System.out.println(url);
+
+        // Request a string response from the provided URL.
+        JsonObjectRequest JSORequest = new JsonObjectRequest(Request.Method.GET, url, null,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                System.out.println("THAT DIDN'T WORK");
+            }
+        });
+        // Add the request to the RequestQueue.
+        queue.add(JSORequest);
     }
 
     @Override
@@ -105,6 +152,9 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
                 sendLogout();
                 finish();
                 break;
+            case R.id.bRefresh:
+                findFriends();
+                break;
         }
     }
 
@@ -133,10 +183,11 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     }
 
     public void findFriends() {
+        updateCurrentLocation();
         // Instantiate the RequestQueue.
         RequestQueue queue = Volley.newRequestQueue(this);
 //        String url = "api.androidhive.info/contacts/";
-        String url = "https://murmuring-brushlands-62477.herokuapp.com/user/index/" + this.username + "/" +
+        String url = "https://murmuring-brushlands-62477.herokuapp.com/user/near/" + this.username + "/" +
                 this.password;
         System.out.println(url);
 
@@ -165,7 +216,8 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
             for (int i = 0; i < array.length(); i++) {
                 JSONObject object = array.getJSONObject(i);
 
-                listAdapter.add(object.getString("firstname") + " " + object.getString("lastname"));
+                listAdapter.add(object.getString("firstname") + " " + object.getString("lastname") + " | " +
+                object.getString("distance") + " km");
             }
         } catch (JSONException e) {
 
@@ -175,19 +227,17 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
 
     @Override
     public void onConnected(Bundle bundle) {
-        if ( Build.VERSION.SDK_INT >= 23 &&
-                ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return  ;
+        if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
+
+            ActivityCompat.requestPermissions( this, new String[] {  android.Manifest.permission.ACCESS_COARSE_LOCATION  },
+                    REQUEST_LOCATION);
         }
 
         Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
                 mGoogleApiClient);
         if (mLastLocation != null) {
-//            mLatitudeText.setText(String.valueOf(mLastLocation.getLatitude()));
-//            mLongitudeText.setText(String.valueOf(mLastLocation.getLongitude()));
+            sendCurrentLocation(String.valueOf(mLastLocation.getLongitude()), String.valueOf(mLastLocation.getLatitude()));
         }
-        System.out.println("Lat: " + String.valueOf(mLastLocation.getLatitude()));
-        System.out.println("Lon: " + String.valueOf(mLastLocation.getLongitude()));
     }
 
     @Override
