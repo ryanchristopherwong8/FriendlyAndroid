@@ -1,5 +1,7 @@
 package com.friendlyandroid.friendlyandroid;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -14,8 +16,12 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
 
@@ -48,38 +54,71 @@ public class Register extends AppCompatActivity implements View.OnClickListener 
                 sendRegister();
                 break;
             case R.id.tvLoginLink:
-                Intent registerIntent = new Intent(Register.this, Login.class);
-                startActivity(registerIntent);
+                finish();
                 break;
         }
     }
 
     public void sendRegister() {
-        final TextView mTextView = (TextView) findViewById(R.id.text);
-
         // Instantiate the RequestQueue.
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "heroku-app.com/user/create/" + etUsername.getText() + "/" +
+        String url = "https://murmuring-brushlands-62477.herokuapp.com/user/create/" + etUsername.getText() + "/" +
                 etPassword.getText() + "/" +
                 etFirstName.getText() + "/" +
                 etLastName.getText();
         System.out.println(url);
 
         // Request a string response from the provided URL.
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-                new Response.Listener<String>() {
+        JsonObjectRequest JSORequest = new JsonObjectRequest(Request.Method.GET, url, null,
+                new Response.Listener<JSONObject>() {
                     @Override
-                    public void onResponse(String response) {
-                        // Display the first 500 characters of the response string.
-                        mTextView.setText("Response is: "+ response.substring(0,500));
+                    public void onResponse(JSONObject response) {
+                        try {
+                            if (response.getString("Type").equals("201")) {
+                                System.out.println("SUCCESS");
+                                successDialog();
+                            } else {
+                                System.out.println("FAIL");
+                                failureDialog(response.getString("Message"));
+                            }
+                        }
+                        catch (JSONException e) {
+                            System.out.println("exception");
+                        }
                     }
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                mTextView.setText("That didn't work!");
+                System.out.println("THAT DIDN'T WORK");
             }
         });
         // Add the request to the RequestQueue.
-        queue.add(stringRequest);
+        queue.add(JSORequest);
+    }
+
+    private void successDialog() {
+        AlertDialog ad = new AlertDialog.Builder(this)
+                .setTitle("Success!")
+                .setMessage("You can now login.")
+                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        finish();
+                    }
+                })
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .show();
+    }
+
+    private void failureDialog(String error) {
+        AlertDialog ad = new AlertDialog.Builder(this)
+                .setTitle("Error!")
+                .setMessage(error)
+                .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        // do nothing
+                    }
+                })
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .show();
     }
 }

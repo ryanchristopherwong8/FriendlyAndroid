@@ -23,11 +23,15 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,12 +40,19 @@ import java.util.Arrays;
 public class MainActivity extends FragmentActivity implements View.OnClickListener, GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener {
 
+    private String username;
+    private String password;
     Button bLogout;
 
     GoogleApiClient mGoogleApiClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        Intent myIntent = getIntent(); // gets the previously created intent
+        this.username = myIntent.getStringExtra("username");
+        this.password = myIntent.getStringExtra("password");
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -56,8 +67,6 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
                     .addApi(LocationServices.API)
                     .build();
         }
-
-
     }
 
     @Override
@@ -86,10 +95,35 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     public void onClick(View v) {
         switch(v.getId()) {
             case R.id.bLogout:
+                sendLogout();
                 Intent loginIntent = new Intent(this, Login.class);
                 startActivity(loginIntent);
                 break;
         }
+    }
+
+    public void sendLogout() {
+        // Instantiate the RequestQueue.
+        RequestQueue queue = Volley.newRequestQueue(this);
+        String url = "https://murmuring-brushlands-62477.herokuapp.com/user/logout/" + this.username + "/" +
+                this.password;
+        System.out.println(url);
+
+        // Request a string response from the provided URL.
+        JsonObjectRequest JSORequest = new JsonObjectRequest(Request.Method.GET, url, null,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                System.out.println("THAT DIDN'T WORK");
+            }
+        });
+        // Add the request to the RequestQueue.
+        queue.add(JSORequest);
     }
 
     public void findFriends() {
